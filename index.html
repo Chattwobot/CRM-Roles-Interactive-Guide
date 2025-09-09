@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The 11 Roles of a CRM</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Deep Ocean & Teal Glow -->
+    <!-- Application Structure Plan: I've designed a dashboard-style application with a clear navigational grid on the left and a dynamic content display on the right. This structure was chosen to break down the 11 distinct roles into manageable, user-selectable topics. It avoids overwhelming the user with a long, scrollable document and encourages non-linear exploration, allowing them to jump directly to roles of interest. The new daily task tracker feature and progress bar have been added to the right panel. This directly addresses the user's desire for a psychologically motivating and goal-oriented experience, turning the app from a passive reference guide into an active, rewarding tool. The visual feedback on task completion taps into the psychological principle of positive reinforcement. -->
+    <!-- Visualization & Content Choices: 
+        1. Report Info: 11 distinct CRM roles. Goal: Organize & Navigate. Viz/Method: Interactive navigation grid (HTML/CSS/JS). Interaction: On-click, the corresponding role's details are displayed. Justification: Provides clear, immediate access to any role, improving usability.
+        2. Report Info: Daily tasks. Goal: Motivate & Track. Viz/Method: Interactive checklist with a progress bar (HTML/CSS/JS). Interaction: Clicking a task updates a progress bar and displays a motivational message. Justification: This gamification element provides visual proof of progress, reinforcing disciplined behavior and making work feel more rewarding.
+        3. Report Info: The conclusion that a CRM is a "growth engine". Goal: Summarize & Relate. Viz/Method: Doughnut Chart (Chart.js Canvas). Interaction: Hover tooltips provide details on each segment. Justification: Visually reinforces the report's central theme by grouping the 11 roles into three core business functions (Acquisition, Retention, Operations), making the overall impact of the CRM role immediately understandable. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0F1C2D;
+            color: #E8F0F7;
+        }
+        .nav-item {
+            transition: all 0.2s ease-in-out;
+        }
+        .nav-item.active {
+            background-color: #27C6A0;
+            color: white;
+            transform: scale(1.05);
+        }
+        .nav-item:hover:not(.active) {
+            background-color: #1A2C40;
+            color: #E8F0F7;
+        }
+        .content-card {
+            background-color: #16283D;
+            border: 1px solid #1A2C40;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 450px;
+            margin-left: auto;
+            margin-right: auto;
+            height: auto;
+            max-height: 450px;
+        }
+        .task-item {
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.2s ease-in-out;
+        }
+        .task-item.completed {
+            text-decoration: line-through;
+            color: #888;
+        }
+    </style>
+</head>
+<body class="antialiased">
+    <div class="container mx-auto p-4 md:p-8">
+        <header class="text-center mb-8 md:mb-12">
+            <h1 class="text-4xl md:text-5xl font-bold text-[#27C6A0]">The 11 Roles of a Customer Relationship Manager</h1>
+            <p class="mt-4 text-lg text-gray-300 max-w-3xl mx-auto">An interactive guide to understanding how a CRM acts as the growth engine of a company, from managing leads to building the brand.</p>
+        </header>
+
+        <main class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <nav id="roles-nav" class="lg:col-span-1 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-2 gap-4 h-fit">
+            </nav>
+
+            <div class="lg:col-span-2">
+                <section id="role-details" class="content-card rounded-lg p-6 md:p-8 min-h-[300px]">
+                    <h2 id="role-title" class="text-2xl font-bold text-[#27C6A0] mb-4">Welcome!</h2>
+                    <div id="role-content">
+                        <p class="text-gray-300">Select a role from the navigation panel to explore its details. This application breaks down the multifaceted responsibilities of a CRM, showing how each function contributes to client satisfaction and business growth.</p>
+                    </div>
+                </section>
+                <section class="mt-8 content-card rounded-lg p-6 md:p-8">
+                    <h2 class="text-2xl font-bold text-center text-[#27C6A0] mb-4">Today's Goals</h2>
+                    <p class="text-center text-gray-300 mb-6 max-w-2xl mx-auto">To maintain discipline in your work, try to complete these essential tasks.</p>
+                    <div class="flex items-center mb-4">
+                        <div id="progress-bar-container" class="w-full bg-[#1A2C40] rounded-full h-2.5">
+                            <div id="progress-bar" class="bg-[#27C6A0] h-2.5 rounded-full" style="width: 0%"></div>
+                        </div>
+                        <span id="progress-text" class="ml-4 text-sm font-semibold text-gray-400">0/3 tasks completed</span>
+                    </div>
+                    <ul id="task-list" class="space-y-4 text-gray-300">
+                    </ul>
+                    <p id="motivational-message" class="text-center text-sm font-semibold text-[#27C6A0] mt-4 opacity-0 transition-opacity duration-300">Let's get started!</p>
+                </section>
+                <section class="mt-8 content-card rounded-lg p-6 md:p-8">
+                    <h2 class="text-2xl font-bold text-center text-[#27C6A0] mb-4">The CRM Growth Engine</h2>
+                    <p class="text-center text-gray-300 mb-6 max-w-2xl mx-auto">A CRM's responsibilities can be grouped into three core pillars that drive a company's success: acquiring new business, retaining clients, and ensuring operational excellence.</p>
+                    <div class="chart-container">
+                        <canvas id="crm-chart"></canvas>
+                    </div>
+                </section>
+            </div>
+        </main>
+
+        <footer class="text-center mt-12 py-6 border-t border-[#1A2C40]">
+             <p class="text-gray-400">&copy; SparshTech.in | A CRM brings in new business, keeps old clients loyal, and builds trust and reputation.</p>
+        </footer>
+    </div>
+
+    <script>
+        const crmRolesData = [
+            { id: 1, title: "Lead Management", icon: '📥', content: { 'How it works': 'CRM receives a list of leads daily or weekly from sources like the Website, LinkedIn, WhatsApp, or References. Each lead contains Company Name, Contact Person, Email, Phone, and their specific Requirement (e.g., Website, App, CRM).', 'Best practice': 'For fewer leads, use Google Sheets/Excel with columns for Name, Contact, Service, Status, and Notes. For many leads, use a CRM tool like HubSpot, Zoho, or Salesforce to create records and track progress systematically.' }},
+            { id: 2, title: "Client Communication", icon: '💬', content: { 'How it works': 'Contact every new lead within 24 hours via Call, WhatsApp, or Email. Always start the first message with a brief introduction of yourself and your company.', 'Best practice': 'Record every communication in notes, detailing what was discussed and the date. Provide regular updates to keep clients informed and build their confidence in your services.' }},
+            { id: 3, title: "Project Coordination", icon: '🔄', content: { 'How it works': 'Gather detailed client requirements in a document or email. Share these requirements clearly with the development and design teams. Track project progress and send regular updates to clients.', 'Best practice': 'Use task management tools like Trello, Asana, or Google Docs for transparency. If there is a delay, always inform the client politely and in advance.' }},
+            { id: 4, title: "Sales Growth Support", icon: '📈', content: { 'How it works': 'Prepare essential documents such as quotations, proposals, agreements, and presentations. Support the Business Development Executive (BDE) or COO during meetings by providing necessary data and insights.', 'Best practice': 'Proposals should always be structured to address the client\'s Problem, present your Solution, and outline the Pricing. Follow up with the client within 2–3 days after sending a proposal.' }},
+            { id: 5, title: "Upselling & Cross-selling", icon: '🛒', content: { 'How it works': 'Suggest additional, relevant services to existing clients. For example, if they have a website, offer SEO, a mobile app, or a chatbot. Review old client data to identify new opportunities.', 'Best practice': 'Maintain a "Service Map" for each client detailing what they bought and what’s missing. When pitching, focus on how the extra service will directly help their business grow.' }},
+            { id: 6, title: "Customer Retention", icon: '🤝', content: { 'How it works': 'Stay in touch with old clients through festival greetings, birthday wishes, or general project updates. Solve any problems they have quickly to make them feel valued.', 'Best practice': 'Create a Client Engagement Calendar to set reminders for check-ins. Every quarter, proactively ask if they have any new requirements or challenges you can help with.' }},
+            { id: 7, title: "Feedback Collection", icon: '📝', content: { 'How it works': 'After project completion, send a feedback form via Google Forms or email. Categorize the feedback received as "Positive" and "Needs Improvement" for internal review.', 'Best practice': 'Use positive feedback as testimonials on your website and social media. Share improvement points with the internal team to refine services and processes.' }},
+            { id: 8, title: "Market Research", icon: '🔍', content: { 'How it works': 'On a weekly basis, check competitor websites, LinkedIn profiles, and other market activity. Study their services, pricing models, and marketing strategies to stay informed.', 'Best practice': 'Note your findings in a short, concise research report. Share this report in monthly meetings with management to inform strategic decisions.' }},
+            { id: 9, title: "Database Management", icon: '🗂️', content: { 'How it works': 'Store all client details, including Name, Contact Info, Email, Project details, Payments, and general Notes. Maintain this information in Google Sheets or a dedicated CRM tool.', 'Best practice': 'Update the database monthly to ensure all information is current. Regularly remove duplicate entries and keep the data clean and organized for easy access.' }},
+            { id: 10, title: "Reporting & Analysis", icon: '📊', content: { 'How it works': 'Prepare weekly or monthly performance reports that include key metrics like the number of leads received, leads converted, and the total revenue generated.', 'Best practice': 'Present reports using charts and graphs created in Excel or Google Sheets for clarity. Use these reports to identify growth areas and potential bottlenecks in the sales funnel.' }},
+            { id: 11, title: "Brand Building", icon: '🏢', content: { 'How it works': 'Maintain a high level of professionalism in every client interaction. Consistently highlight SparshTech’s unique value and strengths in all discussions.', 'Best practice': 'Request testimonials from satisfied clients and showcase them prominently. Use professional and consistent formats for email signatures, proposal templates, and all other company documents.' }}
+        ];
+
+        const navContainer = document.getElementById('roles-nav');
+        const roleTitleEl = document.getElementById('role-title');
+        const roleContentEl = document.getElementById('role-content');
+        let navItems = [];
+
+        function displayRole(roleId) {
+            const role = crmRolesData.find(r => r.id === roleId);
+            if (!role) return;
+
+            roleTitleEl.textContent = `${role.icon} ${role.title}`;
+            let contentHTML = '';
+            for (const section in role.content) {
+                contentHTML += `
+                    <div class="mb-4">
+                        <h3 class="font-semibold text-lg text-gray-200 mb-1">${section}</h3>
+                        <p class="text-gray-300 leading-relaxed">${role.content[section]}</p>
+                    </div>
+                `;
+            }
+            roleContentEl.innerHTML = contentHTML;
+
+            navItems.forEach(item => {
+                item.classList.toggle('active', parseInt(item.dataset.id) === roleId);
+            });
+        }
+        
+        crmRolesData.forEach(role => {
+            const button = document.createElement('button');
+            button.className = 'nav-item text-left p-4 rounded-lg shadow-sm border border-[#1A2C40] bg-[#16283D]';
+            button.dataset.id = role.id;
+            button.innerHTML = `<span class="text-xl mr-3">${role.icon}</span> <span class="font-semibold">${role.title}</span>`;
+            button.addEventListener('click', () => displayRole(role.id));
+            navContainer.appendChild(button);
+            navItems.push(button);
+        });
+
+        const ctx = document.getElementById('crm-chart').getContext('2d');
+        const crmChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Business Acquisition', 'Client Retention & Growth', 'Operational Excellence'],
+                datasets: [{
+                    label: 'CRM Core Functions',
+                    data: [4, 4, 3], 
+                    backgroundColor: [
+                        '#27C6A0',
+                        '#42D1B2',
+                        '#5DDBC4',
+                    ],
+                    borderColor: [
+                        '#16283D',
+                        '#16283D',
+                        '#16283D',
+                    ],
+                    borderWidth: 4,
+                    hoverOffset: 10
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 20,
+                            font: {
+                                size: 14,
+                                family: 'Inter'
+                            },
+                            color: '#E8F0F7'
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                let value = context.raw;
+                                label += `${value} Related Roles`;
+                                return label;
+                            }
+                        },
+                        bodyFont: {
+                            size: 14,
+                            family: 'Inter'
+                        },
+                        titleFont: {
+                            size: 16,
+                            family: 'Inter'
+                        },
+                        padding: 12,
+                        backgroundColor: '#333'
+                    }
+                },
+                cutout: '60%'
+            }
+        });
+
+        const tasks = [
+            '24 hours ke andar naye leads se contact karein.',
+            'Client se project progress update share karein.',
+            'Kam se kam ek naye client se feedback lein.'
+        ];
+
+        const taskListEl = document.getElementById('task-list');
+        const progressBarEl = document.getElementById('progress-bar');
+        const progressTextEl = document.getElementById('progress-text');
+        const motivationalMessageEl = document.getElementById('motivational-message');
+        
+        let completedTasks = 0;
+        const totalTasks = tasks.length;
+        
+        tasks.forEach((task, index) => {
+            const li = document.createElement('li');
+            li.className = 'task-item flex items-center';
+            li.innerHTML = `<input type="checkbox" id="task-${index}" class="mr-3 appearance-none h-5 w-5 rounded-full border border-gray-400 checked:bg-[#27C6A0] checked:border-transparent cursor-pointer">
+                            <label for="task-${index}" class="font-medium">${task}</label>`;
+            li.querySelector('input').addEventListener('change', (e) => {
+                if (e.target.checked) {
+                    completedTasks++;
+                    li.classList.add('completed');
+                    motivationalMessageEl.textContent = getRandomMotivation();
+                    motivationalMessageEl.classList.remove('opacity-0');
+                } else {
+                    completedTasks--;
+                    li.classList.remove('completed');
+                    motivationalMessageEl.classList.add('opacity-0');
+                }
+                updateProgress();
+            });
+            taskListEl.appendChild(li);
+        });
+
+        function updateProgress() {
+            const progress = (completedTasks / totalTasks) * 100;
+            progressBarEl.style.width = `${progress}%`;
+            progressTextEl.textContent = `${completedTasks}/${totalTasks} tasks completed`;
+        }
+
+        function getRandomMotivation() {
+            const messages = [
+                'Bahut badiya, aapne ek aur task poora kar liya!',
+                'Shaabash! Aap apne लक्ष्य ki taraf badh rahe hain.',
+                'Aapka kaam dekh kar lagta hai ki aap apne career mein aage badhne ke liye taiyaar hain.',
+                'Aapki mehnat rang la rahi hai, jaari rakhiye!'
+            ];
+            return messages[Math.floor(Math.random() * messages.length)];
+        }
+
+    </script>
+</body>
+</html>
